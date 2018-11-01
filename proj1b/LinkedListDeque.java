@@ -1,36 +1,37 @@
-public class LinkedListDeque<generic> {
+public class LinkedListDeque<Item> implements Deque<Item> {
     public LinkedList sentinel;
     public LinkedList last;
     public int size;
 
     public class LinkedList {
-        public generic item;
+        public Item item;
         public LinkedList next;
         public LinkedList prev;
 
-        public LinkedList(generic x, LinkedList L) {
+        public LinkedList(Item x, LinkedList L) {
             item = x;
             next = L;
         }
     }
 
-    public LinkedListDeque(generic x) {
+    public LinkedListDeque(Item x) {
         LinkedList first = new LinkedList(x, sentinel);
         last = first;
-        sentinel = new LinkedList((generic)"guard", first);
+        sentinel = new LinkedList((Item)"guard", first);
         first.prev = sentinel;
         sentinel.prev = first;
         size = 1;
     }
 
     public LinkedListDeque() {
-        sentinel = new LinkedList((generic)"guard", null);
+        sentinel = new LinkedList((Item)"guard", null);
         sentinel.next = sentinel;
         sentinel.prev = sentinel;
         last = sentinel;
     }
 
-    public void addFirst(generic item) {
+    @Override
+    public void addFirst(Item item) {
         LinkedList second = sentinel.next;
         LinkedList first = new LinkedList(item, second);
         second.prev = first;
@@ -42,7 +43,8 @@ public class LinkedListDeque<generic> {
         }
     }
 
-   public void addLast(generic item) {
+    @Override
+   public void addLast(Item item) {
         LinkedList secondtolast = last;
         last = new LinkedList(item, sentinel);
         secondtolast.next = last;
@@ -50,6 +52,7 @@ public class LinkedListDeque<generic> {
         size += 1;
    }
 
+   @Override
    public boolean isEmpty() {
         if (sentinel.next == sentinel) {
             return true;
@@ -58,10 +61,12 @@ public class LinkedListDeque<generic> {
         }
    }
 
+   @Override
    public int size() {
         return size;
    }
 
+   @Override
    public void printDeque() {
         LinkedList p = sentinel.next;
         while (p.next != sentinel) {
@@ -71,23 +76,26 @@ public class LinkedListDeque<generic> {
         System.out.println(p.item);
    }
 
-   public generic removeFirst() {
-        generic firstitem = sentinel.next.item;
+   @Override
+   public Item removeFirst() {
+        Item firstitem = sentinel.next.item;
         sentinel.next = sentinel.next.next;
         sentinel.next.prev = sentinel;
         size -= 1;
         return firstitem;
    }
 
-   public generic removeLast() {
-        generic lastitem = last.item;
+   @Override
+   public Item removeLast() {
+        Item lastitem = last.item;
         last = last.prev;
         last.next = sentinel;
         size -= 1;
         return lastitem;
    }
 
-   public generic get(int index){
+   @Override
+   public Item get(int index){
         int n = 0;
         LinkedList p = sentinel.next;
         while (n < index) {
@@ -97,7 +105,7 @@ public class LinkedListDeque<generic> {
         return p.item;
    }
 
-   private generic getRecursivehelper(LinkedList p, int i) {
+   private Item getRecursivehelper(LinkedList p, int i) {
         if (i == 0) {
             return p.item;
         } else {
@@ -105,37 +113,8 @@ public class LinkedListDeque<generic> {
         }
    }
 
-   public generic getRecursive(int index) {
+   public Item getRecursive(int index) {
         return getRecursivehelper(sentinel.next, index);
    }
-
-   public static void main(String[] args) {
-        /** LinkedListDeque<Integer> test = new LinkedListDeque<>(3);
-        test.addFirst(2);
-        test.addLast(5);
-        System.out.println(test.get(1));
-        System.out.println(test.isEmpty());
-        System.out.println(test.size());
-        test.printDeque();
-        test.removeFirst();
-        System.out.println(test.size());
-        test.printDeque();
-        test.removeLast();
-        test.printDeque(); */
-        LinkedListDeque<Integer> test2 = new LinkedListDeque<>();
-        test2.addFirst(3);
-        test2.printDeque();
-        test2.addLast(4);
-        test2.printDeque();
-        test2.addLast(5);
-        test2.addFirst(2);
-        test2.printDeque();
-        System.out.println(test2.get(2));
-        System.out.println(test2.getRecursive(2));
-        return;
-   }
-
-
-
 
 }

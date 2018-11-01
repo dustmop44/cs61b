@@ -16,6 +16,13 @@ public class Game {
     }
 
     /**
+     * 1. Have traps.
+     * 2. Torches run out. aka Light runs out.
+     * 3. Place torches at intersections.
+     * 4. Bag of torches.
+     *
+     *
+     *
      * Method used for autograding and testing the game code. The input string will be a series
      * of characters (for example, "n123sswwdasdassadwas", "n123sss:q", "lwww". The game should
      * behave exactly as if the user typed these characters into the game after playing

@@ -24,9 +24,9 @@ public class RandomWorldDemo {
         int height = tiles[0].length;
         int width = tiles.length;
         for (int x = 0; x < width; x += 1) {
-            for (int y = 0; y < height; y += 1) {
-                tiles[x][y] = randomTile();
-            }
+                for (int y = 0; y < height; y += 1) {
+                    tiles[x][y] = randomTile();
+                }
         }
     }
 
