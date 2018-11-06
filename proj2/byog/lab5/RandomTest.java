@@ -1,4 +1,4 @@
-package byog.Core;
+package byog.lab5;
 import java.util.Random;
 
 public class RandomTest {

@@ -1,4 +1,4 @@
-package byog.Core;
+package byog.lab5;
 
 import byog.TileEngine.Tileset;
 
@@ -7,7 +7,7 @@ import java.util.Random;
 public class hallwaysprouter {
 
     public static int[][] createsprouts(room room, Random RANDOM) {
-        int numhallways = RandomUtils.uniform(RANDOM, 8, 10);
+        int numhallways = RandomUtils.uniform(RANDOM, 8, 20);
         int[][] hallways = new int[numhallways][2];
         for (int i = 0; i < numhallways; i++) {
             hallways[i][0] = RandomUtils.uniform(RANDOM, room.perimeter);
@@ -112,6 +112,8 @@ public class hallwaysprouter {
             }
             return hallway;
         } else if (side == 4) {
+            System.out.println("NEW");
+            System.out.println(position);
             hallway hallway = roommaker.makesidefourhallway(ROOM, position);
             int s = 0;
             while (hallway.obstructed() && s < 100) {
@@ -122,6 +124,9 @@ public class hallwaysprouter {
                 hallway.drawing = null;
             }
             if (hallway.drawing != null) {
+                System.out.println(hallway.position);
+                System.out.println(hallway.latitude + " " + position + " " + hallway.longitude + " " + hallway.length);
+                System.out.println(ROOM.latitude + " " + ROOM.longitude);
                 hallway.drawing[1][hallway.length-1] = Tileset.FLOOR;
             }
             return hallway;

@@ -1,4 +1,4 @@
-package byog.Core;
+package byog.lab5;
 
 import byog.TileEngine.TERenderer;
 import byog.TileEngine.TETile;
@@ -16,14 +16,37 @@ public class Game {
      * Method used for playing a fresh game. The game should start from the main menu.
      */
     public void playWithKeyboard() {
-        // Make Quit and Load options available
-        String command = Menu.MainMenu();
+        StdDraw.setCanvasSize(640, 480);
+        StdDraw.picture(.5, .5, "Torch.png");
+        while (!StdDraw.hasNextKeyTyped()) {
+        }
+        String command = Character.toString(StdDraw.nextKeyTyped());
         if (new String(command).equals("n") || new String(command).equals("N")) {
-            GameHub.StartNewGame();
-        } else if (new String(command).equals("l") || new String(command).equals("L")) {
-            return;
-        } else if (new String(command).equals("q") || new String(command).equals("Q")) {
-            return;
+            StdDraw.clear(Color.black);
+            StdDraw.setPenColor(Color.orange);
+            StdDraw.text(.5, .5, "Seed: ");
+            while(!StdDraw.hasNextKeyTyped()) {
+            }
+            String seed = "";
+            String nextnum = Character.toString(StdDraw.nextKeyTyped());
+            while(! new String(nextnum).equals("s")) {
+                seed += nextnum;
+                StdDraw.clear(Color.black);
+                StdDraw.text(.5, .5, "Seed: " + seed);
+                while(!StdDraw.hasNextKeyTyped()) {
+                }
+                nextnum = Character.toString(StdDraw.nextKeyTyped());
+            }
+            WorldGenerator.Start(Integer.parseInt(seed));
+            while(!StdDraw.hasNextKeyTyped()) {
+            }
+            String quit = Character.toString(StdDraw.nextKeyTyped());
+            while (! new String(quit).equals("q")) {
+                WorldGenerator.Start();
+                while(!StdDraw.hasNextKeyTyped()) {
+                }
+                quit = Character.toString(StdDraw.nextKeyTyped());
+            }
         }
 
     }

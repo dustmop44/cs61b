@@ -1,6 +1,5 @@
-package byog.Core;
+package byog.lab5;
 
-import byog.TileEngine.TETile;
 import byog.TileEngine.Tileset;
 
 import java.util.Random;
@@ -19,7 +18,7 @@ public class makerooms {
     }
 
     public room makefirstroom() {
-        return new room(RandomUtils.uniform(RANDOM, maxwidth), RandomUtils.uniform(RANDOM, maxheight), RANDOM);
+        return new room(RandomUtils.uniform(RANDOM, maxwidth), RandomUtils.uniform(RANDOM, maxheight), 4, 4);
     }
 
     public room makerandomroom(int latitude, int longitude) {

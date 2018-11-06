@@ -1,6 +1,5 @@
-package byog.Core;
+package byog.lab5;
 import byog.TileEngine.TERenderer;
-import edu.princeton.cs.introcs.StdDraw;
 
 import java.util.Random;
 
@@ -12,12 +11,21 @@ import java.util.Random;
  */
 
 public class WorldGenerator {
-    public static void main(String[] args) {
+    public static void Start(int seed) {
         int framewidth = 80;
         int frameheight = 45;
         TERenderer ter = new TERenderer();
         ter.initialize(framewidth, frameheight);
-        Random RANDOM = new Random(0);
+        Random RANDOM = new Random(seed);
+        Generation world = new Generation(framewidth, frameheight, RANDOM);
+        world.firstroom();
+    }
+    public static void Start() {
+        int framewidth = 80;
+        int frameheight = 45;
+        TERenderer ter = new TERenderer();
+        ter.initialize(framewidth, frameheight);
+        Random RANDOM = new Random();
         Generation world = new Generation(framewidth, frameheight, RANDOM);
         world.firstroom();
     }

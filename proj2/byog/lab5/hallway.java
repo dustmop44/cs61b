@@ -1,6 +1,7 @@
-package byog.Core;
+package byog.lab5;
 
 import byog.TileEngine.TETile;
+import byog.TileEngine.Tileset;
 
 import java.util.Arrays;
 import java.util.Random;
@@ -31,11 +32,11 @@ public class hallway extends room {
         }
         RANDOM = random;
         if (horizontal == 1) {
-            this.width = RandomUtils.uniform(RANDOM, 2, 8);
+            this.width = RandomUtils.uniform(RANDOM, 3,4);
             this.length = 3;
         } else {
             this.width = 3;
-            this.length = RandomUtils.uniform(RANDOM, 2, 8);
+            this.length = RandomUtils.uniform(RANDOM, 3, 4);
         }
         /*
         Also, the failsafe here for drawing off the map wouldn't work with side 1 hallways.
@@ -232,6 +233,8 @@ public class hallway extends room {
                 }
                 int min = Arrays.stream(lengths).min().getAsInt();
                 if (min == 0) {
+                    drawing = null;
+                } else if (Generation.world[latitude + 1][longitude + length] != Tileset.FLOOR){
                     drawing = null;
                 } else {
                     longitude = longitude + length - 2 - min;

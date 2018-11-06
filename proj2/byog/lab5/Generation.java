@@ -1,4 +1,4 @@
-package byog.Core;
+package byog.lab5;
 import java.util.Random;
 import byog.TileEngine.TETile;
 import byog.TileEngine.Tileset;
@@ -12,6 +12,8 @@ public class Generation {
     public static TETile[][] world;
     public makerooms roommaker;
     public draw draw;
+    public int cappersproutercount;
+    public static int k = 0;
 
 
     public Generation(int framewidth, int frameheight, Random random) {
@@ -43,17 +45,43 @@ public class Generation {
         //room firstroom = roommaker.makefirstroom();
         room firstroom = roommaker.makesetroom(35, 18, 10, 10);
         draw.drawroom(firstroom, world);
-        sprout(firstroom);
+        hallway[] firsthallways = sprout(firstroom);
+        firsthallways = rearray(firsthallways);
+        cappersprouter(firsthallways);
         generate();
     }
 
-    public void sprout(room room) {
-        /* next to do:
-        remember to solve the if hallways sprout next to each other
-        aka the position is within two numbers.
-        now, make the hallways only hallways.
-        create holes in the room and in the hallway.
-        */
+    public void cappersprouter(hallway[] hallways) {
+        while (cappersproutercount < 4) {
+            room[] caps = capper(hallways);
+            caps = rearray(caps);
+            cappersproutercount += 1;
+            cappersprouter(sprouter(caps));
+        }
+    }
+
+    public room[] roomchecker(room[] rooms) {
+        for (int i = 0; i < rooms.length; i++) {
+            if (rooms[i].perimeter < 1) {
+                rooms[i] = null;
+            }
+        }
+        return rearray(rooms);
+    }
+
+    public hallway[] sprouter(room[] rooms) {
+        roomchecker(rooms);
+        hallway[][] hallwayarrayarray = new hallway[rooms.length][];
+        for (int i = 0; i < rooms.length; i++) {
+            if(rooms[i] != null) {
+                hallwayarrayarray[i] = sprout(rooms[i]);
+            }
+        }
+        hallway[] hallwayarray = rearray(hallwayarrayarray);
+        return hallwayarray;
+    }
+
+    public hallway[] sprout(room room) {
         int[][] hallwaystodraw = hallwaysprouter.createsprouts(room, RANDOM);
         hallway[] hallways = new hallway[hallwaystodraw.length];
         for (int i = 0; i < hallwaystodraw.length; i++) {
@@ -81,30 +109,31 @@ public class Generation {
             }
             hallway hallway = hallwaysprouter.createsprouts(position, side, room, roommaker);
             if (hallway.drawing != null) {
-                /*
-                to do:
-                cut off drawing here if there is already a hallway there.
-                then legitimate capping process.
-                 */
                 draw.drawhallway(hallway, world);
+                cap(hallway);
                 hallways[i] = hallway;
             }
         }
-
+        return hallways;
     }
 
+    public room[] capper(hallway[] hallways) {
+        hallways = rearray(hallways);
+        room[] rooms = new room[hallways.length];
+        for (int i = 0; i < hallways.length; i++) {
+            if (hallways[i] != null) {
+                room roomie = cap(hallways[i]);
+                rooms[i] = roomie;
+            }
+        }
+        return rooms;
+    }
 
-    /*
-    random choose whether room or not.
-    random choose position where the room attaches. also make hole there.
-    maybe if there is wall, we don't need to resize and combine walls.
-     */
     public room cap(hallway hallway) {
         int i = 0;
-        //if (RandomUtils.uniform(RANDOM, 3) >= 1) {
             if (hallway.horizontal == 1) {
                 if (hallway.latitude - 3 >= 0 && hallway.latitude + hallway.width + 3 < maxwidth) {
-                    if (hallway.side == 1 && world[hallway.latitude-3][hallway.longitude] == null) {
+                    if (hallway.side == 1) {
                         room room = roommaker.makesidethreeroom(hallway);
                         while (!room.notobstructed() && i < 100) {
                             room = roommaker.makesidethreeroom(hallway);
@@ -115,11 +144,9 @@ public class Generation {
                         }
                         if (room.drawing != null) {
                             draw.drawroom(room, world);
-                            sprout(room);
                         }
-
                         return room;
-                    } else if (hallway.side == 3 && world[hallway.latitude + hallway.width + 3][hallway.longitude] == null) {
+                    } else if (hallway.side == 3) {
                         room room = roommaker.makesideoneroom(hallway);
                         while (!room.notobstructed() && i < 100) {
                             room = roommaker.makesideoneroom(hallway);
@@ -130,14 +157,14 @@ public class Generation {
                         }
                         if (room.drawing != null) {
                             draw.drawroom(room, world);
-                            sprout(room);
                         }
                         return room;
                     }
+
                 }
             } else {
                 if (hallway.longitude - 3 >= 0 && hallway.longitude + hallway.length + 3 < maxheight) {
-                    if (hallway.side == 4 && world[hallway.latitude][hallway.longitude -3] == null) {
+                    if (hallway.side == 4) {
                         room room = roommaker.makesidefourroom(hallway);
                         while (!room.notobstructed() && i < 100) {
                             room = roommaker.makesidefourroom(hallway);
@@ -148,10 +175,9 @@ public class Generation {
                         }
                         if (room.drawing != null) {
                             draw.drawroom(room, world);
-                            sprout(room);
                         }
                         return room;
-                    } else if (hallway.side == 2 && world[hallway.latitude][hallway.longitude +hallway.length+3] == null) {
+                    } else if (hallway.side == 2) {
                         room room = roommaker.makesidetworoom(hallway);
                         while (!room.notobstructed() && i < 100) {
                             room = roommaker.makesidetworoom(hallway);
@@ -162,12 +188,74 @@ public class Generation {
                         }
                         if (room.drawing != null) {
                             draw.drawroom(room, world);
-                            sprout(room);
                         }
                         return room;
                     }
                 }
             }
-        return new room();}
-    //return new room();}
+        return new room();
+    }
+
+    public hallway[] rearray(hallway[][] hallwayarrayarray) {
+        int count = 0;
+        for (int i = 0; i < hallwayarrayarray.length; i++) {
+            if (hallwayarrayarray[i] != null) {
+                for (int j = 0; j < hallwayarrayarray[i].length; j++) {
+                    if (hallwayarrayarray[i][j] != null) {
+                        count++;
+                    }
+                }
+            }
+        }
+        hallway[] hallways = new hallway[count];
+        count = 0;
+        for (int i = 0; i < hallwayarrayarray.length; i++) {
+            if (hallwayarrayarray[i] != null) {
+                for (int j = 0; j < hallwayarrayarray[i].length; j++) {
+                    if (hallwayarrayarray[i][j] != null) {
+                        hallways[count] = hallwayarrayarray[i][j];
+                        count++;
+                    }
+                }
+            }
+        }
+        return hallways;
+    }
+
+    public hallway[] rearray(hallway[] hallways) {
+        int count = 0;
+        for (int i = 0; i < hallways.length; i++) {
+            if (hallways[i] != null) {
+                count++;
+            }
+        }
+        hallway[] rearrayed = new hallway[count];
+        count = 0;
+        for (int i = 0; i < hallways.length; i++) {
+            if (hallways[i] != null) {
+                rearrayed[count] = hallways[i];
+                count++;
+            }
+        }
+        return rearrayed;
+    }
+
+    public room[] rearray(room[] rooms) {
+        int count = 0;
+        for (int i = 0; i < rooms.length; i++) {
+            if (rooms[i] != null) {
+                count++;
+            }
+        }
+        room[] rearrayed = new room[count];
+        count = 0;
+        for (int i = 0; i < rooms.length; i++) {
+            if (rooms[i] != null) {
+                rearrayed[count] = rooms[i];
+                count++;
+            }
+        }
+        return rearrayed;
+    }
+
 }

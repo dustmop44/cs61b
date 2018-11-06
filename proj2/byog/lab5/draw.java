@@ -1,4 +1,4 @@
-package byog.Core;
+package byog.lab5;
 
 import byog.TileEngine.TETile;
 import byog.TileEngine.Tileset;
