@@ -128,6 +128,14 @@ public class TestMyHashMap {
     }
 
     public static void main(String[] args) {
-        jh61b.junit.TestRunner.runTests(TestMyHashMap.class);
+        //jh61b.junit.TestRunner.runTests(TestMyHashMap.class);
+        MyHashMap<String, Integer> studentIDs = new MyHashMap<>();
+        studentIDs.put("sarah", 12345);
+        studentIDs.put("alan", 345);
+        studentIDs.put("Casey", 322);
+        studentIDs.put("Matt", 222);
+        System.out.println(studentIDs.remove("alan"));
+        System.out.println(studentIDs.remove("Casey", 333));
+        System.out.println(studentIDs.remove("Casey", 322));
     }
 }
