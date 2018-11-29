@@ -76,7 +76,9 @@ public class Board implements WorldState {
         int hammingInt = 0;
         for (int i = 0; i < size; i++) {
             for (int j = 0; j< size; j++) {
-                if (board[i][j] != k) {
+                if (board[i][j] == 0) {
+                    continue;
+                } else if (board[i][j] != k) {
                     hammingInt++;
                 }
                 k++;
@@ -104,6 +106,9 @@ public class Board implements WorldState {
     }
 
     public boolean equals(Object y) {
+        if (size != ((Board) y).size()) {
+            return false;
+        }
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
                 if (board[i][j] != ((Board) y).tileAt(i, j)) {
