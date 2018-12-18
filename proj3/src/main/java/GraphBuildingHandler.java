@@ -38,6 +38,8 @@ public class GraphBuildingHandler extends DefaultHandler {
                     "secondary_link", "tertiary_link"));
     private String activeState = "";
     private final GraphDB g;
+    private GraphDB.Way CurrentWay;
+    private GraphDB.Node CurrentNode;
 
     /**
      * Create a new GraphBuildingHandler.
@@ -46,6 +48,7 @@ public class GraphBuildingHandler extends DefaultHandler {
     public GraphBuildingHandler(GraphDB g) {
         this.g = g;
     }
+
 
     /**
      * Called at the beginning of an element. Typically, you will want to handle each element in
@@ -68,21 +71,23 @@ public class GraphBuildingHandler extends DefaultHandler {
         if (qName.equals("node")) {
             /* We encountered a new <node...> tag. */
             activeState = "node";
+
 //            System.out.println("Node id: " + attributes.getValue("id"));
 //            System.out.println("Node lon: " + attributes.getValue("lon"));
 //            System.out.println("Node lat: " + attributes.getValue("lat"));
-
+            CurrentNode = g.addNode(attributes.getValue("id"), attributes.getValue("lon"), attributes.getValue("lat"));
             /* TODO Use the above information to save a "node" to somewhere. */
             /* Hint: A graph-like structure would be nice. */
 
         } else if (qName.equals("way")) {
             /* We encountered a new <way...> tag. */
             activeState = "way";
+            CurrentWay = g.addWay(attributes.getValue("id"));
 //            System.out.println("Beginning a way...");
         } else if (activeState.equals("way") && qName.equals("nd")) {
             /* While looking at a way, we found a <nd...> tag. */
             //System.out.println("Id of a node in this way: " + attributes.getValue("ref"));
-
+            CurrentWay.addNode(attributes.getValue("ref"));
             /* TODO Use the above id to make "possible" connections between the nodes in this way */
             /* Hint1: It would be useful to remember what was the last node in this way. */
             /* Hint2: Not all ways are valid. So, directly connecting the nodes here would be
@@ -97,18 +102,26 @@ public class GraphBuildingHandler extends DefaultHandler {
             if (k.equals("maxspeed")) {
                 //System.out.println("Max Speed: " + v);
                 /* TODO set the max speed of the "current way" here. */
+                CurrentWay.addMaxSpeed(attributes.getValue("v"));
             } else if (k.equals("highway")) {
                 //System.out.println("Highway type: " + v);
                 /* TODO Figure out whether this way and its connections are valid. */
+                if (ALLOWED_HIGHWAY_TYPES.contains(attributes.getValue("v"))) {
+                    CurrentWay.addHighwayType(attributes.getValue("v"));
+                }
                 /* Hint: Setting a "flag" is good enough! */
             } else if (k.equals("name")) {
+                CurrentWay.addName(attributes.getValue("v"));
                 //System.out.println("Way Name: " + v);
+            } else if (k.equals("building")) {
+                CurrentWay.addBuildingType(attributes.getValue("v"));
             }
 //            System.out.println("Tag with k=" + k + ", v=" + v + ".");
         } else if (activeState.equals("node") && qName.equals("tag") && attributes.getValue("k")
                 .equals("name")) {
             /* While looking at a node, we found a <tag...> with k="name". */
             /* TODO Create a location. */
+            CurrentNode.addName(attributes.getValue("v"));
             /* Hint: Since we found this <tag...> INSIDE a node, we should probably remember which
             node this tag belongs to. Remember XML is parsed top-to-bottom, so probably it's the
             last node that you looked at (check the first if-case). */
@@ -134,6 +147,13 @@ public class GraphBuildingHandler extends DefaultHandler {
             /* Hint1: If you have stored the possible connections for this way, here's your
             chance to actually connect the nodes together if the way is valid. */
 //            System.out.println("Finishing a way...");
+            activeState = "";
+            if (CurrentWay.buildingtype != null) {
+                g.addBuilding(CurrentWay);
+            }
+            if (CurrentWay.highwaytype != null) {
+                g.addHighways(CurrentWay);
+            }
         }
     }
 

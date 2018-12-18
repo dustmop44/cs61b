@@ -6,7 +6,7 @@ import java.io.IOException;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
-import java.util.ArrayList;
+import java.util.*;
 
 /**
  * Graph for storing all of the intersection (vertex) and road (edge) information.
@@ -20,6 +20,9 @@ import java.util.ArrayList;
 public class GraphDB {
     /** Your instance variables for storing the graph. You should consider
      * creating helper classes, e.g. Node, Edge, etc. */
+    Map<String, Node> Nodes = new HashMap<>();
+    Map<String, Way> Buildings = new HashMap<>();
+    Map<String, Way> Highways = new HashMap<>();
 
     /**
      * Example constructor shows how to create and start an XML parser.
@@ -51,13 +54,137 @@ public class GraphDB {
         return s.replaceAll("[^a-zA-Z ]", "").toLowerCase();
     }
 
+    public class Node {
+        String id;
+        String lon;
+        String lat;
+        Set<Node> Adj;
+        String name;
+        String type;
+        Set<Way> Highways;
+        Set<Way> Buildings = new HashSet<>();
+
+        Node(String ID, String LON, String LAT) {
+            id = ID;
+            lon = LON;
+            lat = LAT;
+            Adj = new HashSet<>();
+            Highways = new HashSet<>();
+        }
+
+        void addAdjacentNode(String ID) {
+            Adj.add(Nodes.get(ID));
+            Nodes.get(ID).addAdjacentNode(id);
+        }
+
+        void addAdjacentNode(Node node) {
+            Adj.add(node);
+        }
+
+        void addName(String NAME) {
+            name = NAME;
+        }
+
+        void addType(String TYPE) {
+            type = TYPE;
+        }
+
+        void addBuilding(Way building) {
+            Buildings.add(building);
+        }
+
+    }
+
+    public class Way {
+        String id;
+        Queue<Node> ConnectedNodes;
+        String buildingtype;
+        String name;
+        String maxspeed;
+        String highwaytype;
+
+        Way(String ID) {
+            id = ID;
+            ConnectedNodes = new LinkedList<>();
+        }
+
+        void addNode(String ID) {
+            Node toput = Nodes.get(ID);
+            toput.Highways.add(this);
+            ConnectedNodes.add(toput);
+        }
+
+        void addBuildingType(String TYPE) {
+            buildingtype = TYPE;
+        }
+
+        void addName(String NAME) {
+            name = NAME;
+        }
+
+        void addMaxSpeed(String SPEED) {
+            maxspeed = SPEED;
+        }
+
+        void addHighwayType(String HIGHWAY) {
+            highwaytype = HIGHWAY;
+        }
+
+    }
+
+    Way addWay(String ID) {
+        return new Way(ID);
+    }
+
+    Node addNode(String ID, String LON, String LAT) {
+        Node r = new Node(ID, LON, LAT);
+        Nodes.put(ID, r);
+        return r;
+    }
+
+    void addBuilding(Way building) {
+        Buildings.put(building.id, building);
+        if (building.name != null) {
+            for (Node i : building.ConnectedNodes) {
+                i.addBuilding(building);
+            }
+        }
+    }
+
+    void addHighways(Way highway) {
+        Highways.put(highway.id, highway);
+        Iterator<Node> Connections = highway.ConnectedNodes.iterator();
+        Node pastnode = Connections.next();
+        if (!Connections.hasNext()) {
+            return;
+        }
+        Node presentnode = Connections.next();
+        pastnode.addAdjacentNode(presentnode);
+        while (Connections.hasNext()) {
+            Node futurenode = Connections.next();
+            presentnode.addAdjacentNode(pastnode);
+            presentnode.addAdjacentNode(futurenode);
+            pastnode = presentnode;
+            presentnode = futurenode;
+        }
+        presentnode.addAdjacentNode(pastnode);
+    }
+
     /**
      *  Remove nodes with no connections from the graph.
      *  While this does not guarantee that any two nodes in the remaining graph are connected,
      *  we can reasonably assume this since typically roads are connected.
      */
     private void clean() {
-        // TODO: Your code here.
+        Set<String> toberemoved = new HashSet<>();
+        for (Map.Entry<String, Node> i : Nodes.entrySet()) {
+            if (i.getValue().Adj.isEmpty()) {
+                toberemoved.add(i.getKey());
+            }
+        }
+        for (String i : toberemoved) {
+            Nodes.remove(i);
+        }
     }
 
     /**
@@ -66,7 +193,11 @@ public class GraphDB {
      */
     Iterable<Long> vertices() {
         //YOUR CODE HERE, this currently returns only an empty list.
-        return new ArrayList<Long>();
+        HashSet<Long> vertices = new HashSet<>();
+        for (Node i : Nodes.values()) {
+            vertices.add(Long.parseLong(i.id));
+        }
+        return vertices;
     }
 
     /**
@@ -75,7 +206,11 @@ public class GraphDB {
      * @return An iterable of the ids of the neighbors of v.
      */
     Iterable<Long> adjacent(long v) {
-        return null;
+        HashSet<Long> adjacent = new HashSet<>();
+        for (Node i : Nodes.get(Long.toString(v)).Adj) {
+            adjacent.add(Long.parseLong(i.id));
+        }
+        return adjacent;
     }
 
     /**
@@ -136,7 +271,15 @@ public class GraphDB {
      * @return The id of the node in the graph closest to the target.
      */
     long closest(double lon, double lat) {
-        return 0;
+        long id = 0;
+        double closestdistance = Double.POSITIVE_INFINITY;
+        for (Node i : Nodes.values()) {
+            if (closestdistance > distance(lon, lat, Double.parseDouble(i.lon), Double.parseDouble(i.lat))) {
+                id = Long.parseLong(i.id);
+                closestdistance = distance(lon, lat, Double.parseDouble(i.lon), Double.parseDouble(i.lat));
+            }
+        }
+        return id;
     }
 
     /**
@@ -145,7 +288,7 @@ public class GraphDB {
      * @return The longitude of the vertex.
      */
     double lon(long v) {
-        return 0;
+        return Double.parseDouble(Nodes.get(Long.toString(v)).lon);
     }
 
     /**
@@ -154,6 +297,6 @@ public class GraphDB {
      * @return The latitude of the vertex.
      */
     double lat(long v) {
-        return 0;
+        return Double.parseDouble(Nodes.get(Long.toString(v)).lat);
     }
 }

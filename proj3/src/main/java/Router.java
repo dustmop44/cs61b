@@ -1,5 +1,5 @@
-import java.util.List;
-import java.util.Objects;
+import java.text.DecimalFormat;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -23,9 +23,93 @@ public class Router {
      * @param destlat The latitude of the destination location.
      * @return A list of node id's in the order visited on the shortest path.
      */
+
     public static List<Long> shortestPath(GraphDB g, double stlon, double stlat,
                                           double destlon, double destlat) {
-        return null; // FIXME
+        long startnode = g.closest(stlon, stlat);
+        long endnode = g.closest(destlon, destlat);
+        System.out.println(endnode);
+        PriorityQueue<Vertice> nextup = new PriorityQueue<>();
+        Vertice start = new Vertice(startnode, endnode, g);
+        start.previousvertice = null;
+        start.distancesofar = 0;
+        for (Long i : g.adjacent(startnode)) {
+            Vertice next = new Vertice(i, endnode, g);
+            next.previousvertice(start);
+            nextup.add(next);
+        }
+        Vertice last = shortestPathHelper(g, endnode, nextup);
+        List<Long> path = new LinkedList<Long>();
+        return listify(last, path);
+    }
+
+    private static List<Long> listify(Vertice last, List<Long> current) {
+        if (last.previousvertice == null) {
+            current.add(last.thisnode);
+            return current;
+        } else {
+            List<Long> returnlist = listify(last.previousvertice, current);
+            current.add(last.thisnode);
+            return returnlist;
+        }
+    }
+
+    private static class Vertice implements Comparable<Vertice> {
+        Vertice previousvertice;
+        Long thisnode;
+        Long endnode;
+        double distancesofar;
+        double distancetogo;
+        GraphDB g;
+
+        Vertice(Long nodeid, Long ENDNODE, GraphDB G) {
+            thisnode = nodeid;
+            endnode = ENDNODE;
+            g = G;
+        }
+
+        double distancetogo() {
+            return g.distance(g.lon(thisnode), g.lat(thisnode), g.lon(endnode), g.lat(endnode));
+        }
+
+        public int compareTo(Vertice other) {
+            if (((this.distancesofar + this.distancetogo()) - (other.distancesofar + other.distancetogo())) < 0) {
+                return -1;
+            } else if ((this.distancesofar + this.distancetogo()) - (other.distancesofar + other.distancetogo()) > 0) {
+                return 1;
+            } else {
+                return 0;
+            }
+        }
+
+        void previousvertice(Vertice i) {
+            previousvertice = i;
+            distancesofar = previousvertice.distancesofar + g.distance(g.lon(thisnode), g.lat(thisnode), g.lon(previousvertice.thisnode), g.lat(previousvertice.thisnode));
+        }
+
+
+
+    }
+
+    private static Vertice shortestPathHelper(GraphDB g, Long endnode, Queue<Vertice> nodestocheck) {
+        Vertice whatsup = nodestocheck.remove();
+        Set<Long> checked = new HashSet<>();
+        while (!whatsup.thisnode.equals(endnode)) {
+            checked.add(whatsup.thisnode);
+            for (Long i : g.adjacent(whatsup.thisnode)) {
+                if (whatsup.previousvertice.thisnode != i && !checked.contains(i)) {
+                    Vertice next = new Vertice(i, endnode, g);
+                    next.previousvertice(whatsup);
+                    nodestocheck.add(next);
+                }
+            }
+            if (nodestocheck.isEmpty() && !whatsup.thisnode.equals(endnode)) {
+                whatsup.previousvertice = null;
+                return whatsup;
+            }
+            whatsup = nodestocheck.remove();
+        }
+        return whatsup;
     }
 
     /**
@@ -37,7 +121,179 @@ public class Router {
      * route.
      */
     public static List<NavigationDirection> routeDirections(GraphDB g, List<Long> route) {
-        return null; // FIXME
+        List<NavigationDirection> directions = new LinkedList<NavigationDirection>();
+        Iterator<Long> path = route.iterator();
+        direction(g, path, directions);
+        for (NavigationDirection i : directions) {
+            System.out.println(i);
+        }
+        return directions;
+    }
+
+    private static void direction(GraphDB g, Iterator<Long> route, List<NavigationDirection> directions) {
+        Long currentnode = route.next();
+        GraphDB.Way currentway = null;
+        Long nextnode = route.next();
+        double distancesofar = 0;
+        for (GraphDB.Way i : g.Nodes.get(Long.toString(currentnode)).Highways) {
+            if (g.Nodes.get(Long.toString(nextnode)).Highways.contains(i)) {
+                currentway = i;
+            }
+        }
+        int direction = 0;
+        Long previousnode = currentnode;
+        while (route.hasNext()) {
+            while (containsway(g, nextnode, currentnode, currentway) && route.hasNext()) {
+                distancesofar += g.distance(currentnode, nextnode);
+                previousnode = currentnode;
+                currentnode = nextnode;
+                nextnode = route.next();
+            }
+
+            double initialbearing = g.bearing(previousnode, currentnode);
+            double nextbearing = g.bearing(currentnode, nextnode);
+            NavigationDirection nextd = new NavigationDirection();
+            nextd.direction = direction;
+            nextd.distance = distancesofar;
+            if (route.hasNext()) {
+                nextd.distance = distancesofar;
+            } else if (!route.hasNext() && containsway(g, nextnode, currentnode, currentway)) {
+                distancesofar += g.distance(currentnode, nextnode);
+                nextd.distance = distancesofar;
+                if (currentway.name == null) {
+                    nextd.way = "";
+                } else {
+                    nextd.way = currentway.name;
+                }
+                directions.add(nextd);
+               return;
+            }
+            if (currentway.name == null) {
+                nextd.way = "";
+            } else {
+                nextd.way = currentway.name;
+            }
+            directions.add(nextd);
+            direction = bearingint(initialbearing, nextbearing);
+            Boolean toggle = true;
+            if (route.hasNext()) {
+                for (GraphDB.Way i : g.Nodes.get(Long.toString(nextnode)).Highways) {
+                    if (i.name != null && currentway.name != null) {
+                        if (i.name.equals(currentway.name) && !i.id.equals(currentway.id)) {
+                            for (GraphDB.Way j : g.Nodes.get(Long.toString(currentnode)).Highways) {
+                                for (GraphDB.Way h : g.Nodes.get(Long.toString(nextnode)).Highways) {
+                                    if (j.id.equals(h.id) && j.name.equals(h.name) && !j.name.equals(currentway.name)) {
+                                        currentway = j;
+                                        toggle = false;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                previousnode = currentnode;
+                currentnode = nextnode;
+                nextnode = route.next();
+                for (GraphDB.Way i : g.Nodes.get(Long.toString(currentnode)).Highways) {
+                    if (g.Nodes.get(Long.toString(nextnode)).Highways.contains(i)) {
+                        if (toggle == true) {
+                            currentway = i;
+                        }
+                    }
+                }
+            }
+            distancesofar = g.distance(previousnode, currentnode);
+            if (!route.hasNext()) {
+                initialbearing = g.bearing(previousnode, currentnode);
+                nextbearing = g.bearing(currentnode, nextnode);
+                nextd = new NavigationDirection();
+                nextd.direction = direction;
+                for (GraphDB.Way i : g.Nodes.get(Long.toString(currentnode)).Highways) {
+                    if (g.Nodes.get(Long.toString(nextnode)).Highways.contains(i)) {
+                        currentway = i;
+                    }
+                }
+                if (containsway(g, previousnode, currentnode, currentway)) {
+                    distancesofar += g.distance(currentnode, nextnode);
+                } else {
+                    distancesofar = g.distance(currentnode, nextnode);
+                }
+                nextd.distance = distancesofar;
+                if (currentway.name == null) {
+                    nextd.way = "";
+                } else {
+                    nextd.way = currentway.name;
+                }
+                directions.add(nextd);
+                return;
+            }
+        }
+        NavigationDirection nextd = new NavigationDirection();
+        distancesofar += g.distance(currentnode, nextnode);
+        nextd.distance = distancesofar;
+        nextd.direction = 0;
+        if (currentway.name == null) {
+            nextd.way = "";
+        } else {
+            nextd.way = currentway.name;
+        }
+        directions.add(nextd);
+    }
+
+    private static Boolean containsway(GraphDB g, Long nextnode, Long currentnode, GraphDB.Way currentway) {
+
+        for (GraphDB.Way i : g.Nodes.get(Long.toString(nextnode)).Highways) {
+            if (i.id.equals(currentway.id)) {
+                return true;
+            } else if (i.name != null && currentway.name != null) {
+                if (i.name.equals(currentway.name) && !i.id.equals(currentway.id)) {
+                    for (GraphDB.Way j : g.Nodes.get(Long.toString(currentnode)).Highways) {
+                        for (GraphDB.Way h : g.Nodes.get(Long.toString(nextnode)).Highways) {
+                            if (j.id.equals(h.id) && j.name.equals(h.name) && !j.name.equals(currentway.name)) {
+                                return false;
+                            }
+                        }
+                    }
+                }
+                if (i.name.equals(currentway.name)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private static int bearingint(double initial, double next) {
+        if ((next > initial && next < initial + 15) || (next < initial && next > initial - 15)) {
+            return 1;
+        } else if ((next < -165 && initial > 360 - 15 + next) || (next > 165 && initial < -360 + 15 + next)) {
+            return 1;
+        } else if (next > initial && next < initial + 30) {
+            return 3;
+        } else if (next < initial && next > initial - 30) {
+            return 2;
+        } else if (next < -150 && initial > 360 - 30 + next) {
+            return 3;
+        } else if (next > 150 && initial < -360 + 30 + next) {
+            return 2;
+        } else if (next > initial && next < initial + 100) {
+            return 4;
+        } else if (next < initial && next > initial - 100) {
+            return 5;
+        } else if (next < -80 && initial > 360 - 100 + next) {
+            return 4;
+        } else if (next > 80 && initial < -360 + 100 + next) {
+            return 5;
+        } else if (next > initial && next < initial + 180) {
+            return 7;
+        } else if (next < initial && next > initial - 180) {
+            return 6;
+        } else if (next < 0 && initial > 360 - 180 + next) {
+            return 7;
+        } else if (next > 0 && initial < -360 + 180 + next) {
+            return 6;
+        }
+        return 10;
     }
 
 

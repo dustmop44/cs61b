@@ -1,3 +1,4 @@
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -8,10 +9,177 @@ import java.util.Map;
  * not draw the output correctly.
  */
 public class Rasterer {
+    private double rootullon;
+    private double rootullat;
+    private double rootlrlon;
+    private double rootlrlat;
+    private double queryullon;
+    private double queryullat;
+    private double querylrlon;
+    private double querylrlat;
+    private double querywidth;
+    private double queryheight;
+    private int depth;
+    private double rasterLonDPP;
+    private double rasterullon;
+    private double rasterlrlon;
+    private double rasterullat;
+    private double rasterlrlat;
+    private double lonPI;
+    private int minx;
+    private int maxx;
+    private double latPI;
+    private int miny;
+    private int maxy;
+    private String[][] grid;
+    private Boolean querysuccess;
 
     public Rasterer() {
-        // YOUR CODE HERE
+        rootullon = MapServer.ROOT_ULLON;
+        rootullat = MapServer.ROOT_ULLAT;
+        rootlrlon = MapServer.ROOT_LRLON;
+        rootlrlat = MapServer.ROOT_LRLAT;
     }
+
+    private void update(Map<String, Double> params) {
+        querylrlon = params.get("lrlon");
+        querylrlat = params.get("lrlat");
+        queryullon = params.get("ullon");
+        queryullat = params.get("ullat");
+        querywidth = params.get("w");
+        queryheight = params.get("h");
+    }
+
+    private void fill(Map<String, Object> results) {
+        updateresults();
+        results.put("depth", depth);
+        results.put("raster_ul_lon", rasterullon);
+        results.put("raster_ul_lat", rasterullat);
+        results.put("raster_lr_lon", rasterlrlon);
+        results.put("raster_lr_lat", rasterlrlat);
+        results.put("render_grid", grid);
+        results.put("query_success", querysuccess);
+    }
+
+    private void updateresults() {
+        updatedepth();
+        updateraster();
+        updaterendergrid();
+        updatequerysuccess();
+    }
+
+    private void updatequerysuccess() {
+        if (queryullon > rootlrlon || queryullat < rootlrlat || querylrlon < rootullon || querylrlat > rootullat) {
+            querysuccess = false;
+        } else {
+            querysuccess = true;
+        }
+    }
+
+    private void updaterendergrid() {
+        if (maxx > Math.pow(2, depth) - 1) {
+            maxx = (int) Math.pow(2, depth) - 1;
+        }
+        if (maxy > Math.pow(2, depth) - 1) {
+            maxy = (int) Math.pow(2, depth) - 1;
+        }
+        grid = new String[maxy - miny + 1][maxx - minx + 1];
+        for (int i = miny; i < miny + grid.length; i++) {
+            for (int j = minx; j < minx + grid[0].length; j++) {
+                grid[i - miny][j-minx] = "d" + depth + "_x" + j + "_y" + i + ".png";
+            }
+        }
+    }
+
+    private void updateraster() {
+        lonperimage();
+        imageminx();
+        imagemaxx();
+        latperimage();
+        imageminy();
+        imagemaxy();
+    }
+
+    private void imageminy() {
+        int k = 0;
+        while ((-(k * latPI)) + rootullat > queryullat) {
+            k++;
+        }
+        if (k == 0) {
+            miny = 0;
+        } else {
+            miny = k - 1;
+        }
+        rasterullat = -(miny*latPI) + rootullat;
+    }
+
+    private void imagemaxy() {
+        int k = 0;
+        while ((-k * latPI) + rootullat > querylrlat) {
+            k++;
+        }
+        if (k == 0) {
+            maxy = 0;
+        } else {
+            maxy = k - 1;
+        }
+        rasterlrlat = -(k * latPI) + rootullat;
+    }
+
+    private void imageminx() {
+        int k = 0;
+        while (((k*lonPI) + rootullon) < queryullon) {
+            k++;
+        }
+        if (k == 0) {
+            minx = 0;
+        } else {
+            minx = k - 1;
+        }
+        rasterullon = (minx * lonPI) + rootullon;
+    }
+
+    private void imagemaxx() {
+        int k = 0;
+        while (((k*lonPI) + rootullon) < querylrlon) {
+            k++;
+        }
+        if (k == 0) {
+            maxx = 0;
+        } else {
+            maxx = k - 1;
+        }
+        rasterlrlon = (k * lonPI) + rootullon;
+    }
+
+    private void latperimage() {
+        latPI = Math.abs(rootullat - rootlrlat)/Math.pow(2, depth);
+    }
+
+    private void lonperimage() {
+        lonPI = Math.abs(rootullon - rootlrlon)/Math.pow(2, depth);
+    }
+
+    private void updatedepth() {
+        double QueryLonDPP = Math.abs(queryullon - querylrlon)/(querywidth);
+        int k = 0;
+        while (DepthkLonDPP(k) > QueryLonDPP) {
+            k++;
+        }
+        depth = k;
+        if (depth > 7) {
+            depth = 7;
+        }
+        rasterLonDPP = DepthkLonDPP(depth);
+    }
+
+    private double DepthkLonDPP(int depth) {
+        return Math.abs(rootullon - rootlrlon)/(Math.pow(2, depth) * 256);
+    }
+
+
+
+
 
     /**
      * Takes a user query and finds the grid of images that best matches the query. These
@@ -42,10 +210,10 @@ public class Rasterer {
      *                    forget to set this to true on success! <br>
      */
     public Map<String, Object> getMapRaster(Map<String, Double> params) {
-        // System.out.println(params);
+        System.out.println(params);
         Map<String, Object> results = new HashMap<>();
-        System.out.println("Since you haven't implemented getMapRaster, nothing is displayed in "
-                           + "your browser.");
+        update(params);
+        fill(results);
         return results;
     }
 
