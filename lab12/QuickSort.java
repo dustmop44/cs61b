@@ -47,13 +47,61 @@ public class QuickSort {
     private static <Item extends Comparable> void partition(
             Queue<Item> unsorted, Item pivot,
             Queue<Item> less, Queue<Item> equal, Queue<Item> greater) {
-        // Your code here!
+        for (Item i : unsorted) {
+            if (i.compareTo(pivot) < 0) {
+                less.enqueue(i);
+            } else if (i.compareTo(pivot) > 0) {
+                greater.enqueue(i);
+            } else {
+                equal.enqueue(i);
+            }
+        }
+    }
+
+    private static <Item extends Comparable> Queue<Item> comparetwo(Queue<Item> items) {
+        Item itemone = items.dequeue();
+        Item itemtwo = items.dequeue();
+        if (itemone.compareTo(itemtwo) < 0) {
+            items.enqueue(itemone);
+            items.enqueue(itemtwo);
+        } else {
+            items.enqueue(itemtwo);
+            items.enqueue(itemone);
+        }
+        return items;
+    }
+
+    public static <Item extends Comparable> Queue<Item> quickSortHelper(Queue<Item> items) {
+        if (items.size() <= 1) {
+            return items;
+        } else if (items.size() == 2) {
+            return comparetwo(items);
+        } else {
+            Queue<Item> less = new Queue<>();
+            Queue<Item> equal = new Queue<>();
+            Queue<Item> greater = new Queue<>();
+            Item pivot = getRandomItem(items);
+            partition(items, pivot, less, equal, greater);
+            return catenate(catenate(quickSortHelper(less), equal), quickSortHelper(greater));
+        }
     }
 
     /** Returns a Queue that contains the given items sorted from least to greatest. */
     public static <Item extends Comparable> Queue<Item> quickSort(
             Queue<Item> items) {
-        // Your code here!
-        return items;
+        return quickSortHelper(items);
+    }
+
+    public static void main(String[] args) {
+        Queue<String> test = new Queue<>();
+        test.enqueue("apple");
+        test.enqueue("cherry");
+        test.enqueue("dragonfruit");
+        test.enqueue("edamame");
+        test.enqueue("blueberry");
+        System.out.println(test);
+        Queue<String> test2 = QuickSort.quickSort(test);
+        System.out.println(test);
+        System.out.println(test2);
     }
 }

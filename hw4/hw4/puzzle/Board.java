@@ -5,6 +5,8 @@ import edu.princeton.cs.algs4.Stack;
 public class Board implements WorldState {
     int[][] board;
     int size;
+    int manhattan = manhattan();
+    int hamming = hamming();
 
     public Board(int[][] tiles) {
         size = tiles.length;
@@ -77,7 +79,7 @@ public class Board implements WorldState {
         for (int i = 0; i < size; i++) {
             for (int j = 0; j< size; j++) {
                 if (board[i][j] == 0) {
-                    continue;
+                    hammingInt += 0;
                 } else if (board[i][j] != k) {
                     hammingInt++;
                 }

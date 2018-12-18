@@ -3,10 +3,14 @@ package hw4.puzzle;
 import edu.princeton.cs.algs4.MinPQ;
 import edu.princeton.cs.algs4.Stack;
 
+import java.util.HashSet;
+import java.util.Iterator;
+
 public class Solver {
     private int moves = 0;
     private MinPQ<WorldStateNode> trials;
     private Stack<WorldState> SOLUTION = new Stack<>();
+    private HashSet<WorldStateNode> DQList = new HashSet<>();
 
     private class WorldStateNode implements Comparable<WorldStateNode>{
         private WorldState state;
@@ -32,17 +36,16 @@ public class Solver {
         SolverHelper(INITIAL);
     }
 
-    private void SolverHelperHelper(WorldStateNode thing) {
-        if (!trials.isEmpty()) {
-            WorldStateNode testagainst = trials.delMin();
-            if (testagainst.state.equals(thing.state)) {
+    private void DQBefore(WorldStateNode thing, Iterator<WorldStateNode> DQLIst) {
+        if (!DQLIst.hasNext()) {
+            trials.insert(thing);
+        } else {
+            if (DQLIst.next().state.equals(thing.state)) {
                 return;
             } else {
-                SolverHelperHelper(thing);
-                trials.insert(testagainst);
+                DQBefore(thing, DQLIst);
             }
         }
-
     }
 
     private void SolverHelper(WorldStateNode thing) {
@@ -57,10 +60,12 @@ public class Solver {
                 } else if (!i.equals(thing.previous.state)) {
                     WorldStateNode insert = new WorldStateNode(i, thing);
                     insert.moves = thing.moves + 1;
-                    trials.insert(insert);
+                    DQBefore(insert, DQList.iterator());
                 }
             }
-            SolverHelper(trials.delMin());
+            WorldStateNode next = trials.delMin();
+            DQList.add(next);
+            SolverHelper(next);
         }
     }
 

@@ -34,8 +34,13 @@ public class MergeSort {
     /** Returns a queue of queues that each contain one item from items. */
     private static <Item extends Comparable> Queue<Queue<Item>>
             makeSingleItemQueues(Queue<Item> items) {
-        // Your code here!
-        return null;
+        Queue<Queue<Item>> newqueue = new Queue<>();
+        for (Item i : items) {
+            Queue<Item> insert = new Queue<>();
+            insert.enqueue(i);
+            newqueue.enqueue(insert);
+        }
+        return newqueue;
     }
 
     /**
@@ -53,14 +58,74 @@ public class MergeSort {
      */
     private static <Item extends Comparable> Queue<Item> mergeSortedQueues(
             Queue<Item> q1, Queue<Item> q2) {
-        // Your code here!
-        return null;
+        Queue<Item> returnqueue = new Queue<>();
+        if (q1.isEmpty()) {
+            for (Item i : q2) {
+                returnqueue.enqueue(i);
+            }
+        } else if (q2.isEmpty()) {
+            for (Item i : q1) {
+                returnqueue.enqueue(i);
+            }
+        } else if (q1.peek().compareTo(q2.peek()) <= 0) {
+            returnqueue.enqueue(q1.dequeue());
+            for (Item i : mergeSortedQueues(q1, q2)) {
+                returnqueue.enqueue(i);
+            }
+        } else if (q1.peek().compareTo(q2.peek()) > 0) {
+            returnqueue.enqueue(q2.dequeue());
+            for (Item i : mergeSortedQueues(q1, q2)) {
+                returnqueue.enqueue(i);
+            }
+        }
+        return returnqueue;
+    }
+
+    private static <Item extends Comparable> Queue<Queue<Item>> MergeSortHelper(Queue<Queue<Item>> items) {
+        if (items.size() == 1) {
+            return items;
+        } else if (items.size() == 2) {
+            Queue<Item> q1 = items.dequeue();
+            Queue<Item> q2 = items.dequeue();
+            items.enqueue(mergeSortedQueues(q1, q2));
+            return items;
+        } else {
+            int k = 0;
+            int l = items.size();
+            Queue<Queue<Item>> q1 = new Queue<Queue<Item>>();
+            Queue<Queue<Item>> q2 = new Queue<Queue<Item>>();
+            while (k <= l/2) {
+                q1.enqueue(items.dequeue());
+                k++;
+            }
+            while (k < l) {
+                q2.enqueue(items.dequeue());
+                k++;
+            }
+            q1 = MergeSortHelper(q1);
+            q2 = MergeSortHelper(q2);
+            q1.enqueue(q2.dequeue());
+            return MergeSortHelper(q1);
+        }
     }
 
     /** Returns a Queue that contains the given items sorted from least to greatest. */
     public static <Item extends Comparable> Queue<Item> mergeSort(
             Queue<Item> items) {
-        // Your code here!
-        return items;
+        Queue<Queue<Item>> startqueue = makeSingleItemQueues(items);
+        return MergeSortHelper(startqueue).dequeue();
+    }
+
+    public static void main(String[] args) {
+        Queue<String> test = new Queue<>();
+        test.enqueue("apple");
+        test.enqueue("cherry");
+        test.enqueue("dragonfruit");
+        test.enqueue("edamame");
+        test.enqueue("blueberry");
+        System.out.println(test);
+        Queue<String> test2 = MergeSort.mergeSort(test);
+        System.out.println(test);
+        System.out.println(test2);
     }
 }
