@@ -178,7 +178,7 @@ public class GraphDB {
     private void clean() {
         Set<String> toberemoved = new HashSet<>();
         for (Map.Entry<String, Node> i : Nodes.entrySet()) {
-            if (i.getValue().Adj.isEmpty()) {
+            if (i.getValue().Adj.isEmpty() && i.getValue().name == null) {
                 toberemoved.add(i.getKey());
             }
         }

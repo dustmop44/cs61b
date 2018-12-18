@@ -4,12 +4,7 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
 import java.io.IOException;
@@ -285,7 +280,8 @@ public class MapServer {
      * cleaned <code>prefix</code>.
      */
     public static List<String> getLocationsByPrefix(String prefix) {
-        return new LinkedList<>();
+        Trie names = new Trie(graph.Nodes.keySet());
+        return names.findfromprefix(cleanString(prefix));
     }
 
     /**
@@ -301,7 +297,140 @@ public class MapServer {
      * "id" : Number, The id of the node. <br>
      */
     public static List<Map<String, Object>> getLocations(String locationName) {
-        return new LinkedList<>();
+        List<Map<String, Object>> returnlist = new LinkedList<>();
+        Trie names = new Trie(graph.Nodes.keySet());
+        List<GraphDB.Node> nodes = names.findexactmatch(cleanString(locationName));
+        for (GraphDB.Node i : nodes) {
+            Map<String, Object> insert = new HashMap<>();
+            insert.put("lat", i.lat);
+            insert.put("lon", i.lon);
+            insert.put("name", i.name);
+            insert.put("id", i.id);
+            returnlist.add(insert);
+        }
+        return returnlist;
+    }
+
+    private static String cleanString(String string) {
+        System.out.println(string);
+        string = string.replaceAll("[^a-zA-Z ]", "");
+        string = string.toLowerCase();
+        System.out.println(string);
+        System.out.println(" " );
+        return string;
+    }
+
+    private static class Trie {
+        TrieNode zerogen = new TrieNode("");
+
+        Trie(Set<String> Nodes) {
+            for (String i : Nodes) {
+                String name = graph.Nodes.get(i).name;
+                if (name != null) {
+                    if (cleanString(name).length() > 0) {
+                        InsertString(zerogen, cleanString(name), name, graph.Nodes.get(i));
+                    }
+                }
+            }
+        }
+
+        private List<GraphDB.Node> findexactmatch(String name) {
+            List<GraphDB.Node> toreturn = new LinkedList<>();
+            TrieNode parent = zerogen;
+            int index = 0;
+            if (parent.children.isEmpty()) {
+                return toreturn;
+            }
+            while (parent.children.containsKey(name.substring(index, index + 1)) && index < name.length() - 1) {
+                parent = parent.children.get(name.substring(index, index + 1));
+                index++;
+                if (parent.children.isEmpty()) {
+                    return toreturn;
+                }
+            }
+            if (index == name.length() - 1) {
+                return parent.children.get(name.substring(index)).nodes;
+            } else {
+                return toreturn;
+            }
+        }
+
+
+        private List<String> findfromprefix(String prefix) {
+            List<String> toreturn = new LinkedList<>();
+            TrieNode parent = zerogen;
+            int index = 0;
+            if (parent.children.isEmpty()) {
+                return toreturn;
+            }
+            while (parent.children.containsKey(prefix.substring(index, index + 1)) && index < prefix.length() - 1) {
+                parent = parent.children.get(prefix.substring(index, index + 1));
+                index++;
+                if (parent.children.isEmpty()) {
+                    return toreturn;
+                }
+            }
+            if (index == prefix.length() - 1) {
+                List<String> matches = new LinkedList<>();
+                collectallmatches(parent.children.get(prefix.substring(index)), matches);
+                return matches;
+            } else {
+                return toreturn;
+            }
+        }
+
+        private void collectallmatches(TrieNode node, List<String> matches) {
+            if (node.entry == true) {
+                matches.add(node.location);
+            }
+            if (node.children.isEmpty()) {
+                return;
+            } else {
+                for (String i : node.children.keySet()) {
+                    collectallmatches(node.children.get(i), matches);
+                }
+            }
+        }
+
+        private void InsertString(TrieNode parent, String name, String untouchedname, GraphDB.Node node) {
+            if (parent.children.containsKey(name.substring(0, 1))) {
+                if (name.length() == 1) {
+                    parent.children.get(name).entry = true;
+                    parent.children.get(name).location = untouchedname;
+                    parent.children.get(name).nodes.add(node);
+                    return;
+                } else {
+                    InsertString(parent.children.get(name.substring(0,1)), name.substring(1), untouchedname, node);
+                }
+            } else {
+                if (name.length() == 1) {
+                    TrieNode toput = new TrieNode(name);
+                    toput.entry = true;
+                    toput.location = untouchedname;
+                    toput.nodes.add(node);
+                    parent.children.put(name, toput);
+                    return;
+                } else {
+                    TrieNode toput = new TrieNode(name.substring(0, 1));
+                    parent.children.put(name.substring(0, 1), toput);
+                    InsertString(toput, name.substring(1), untouchedname, node);
+                }
+            }
+        }
+
+        private class TrieNode {
+            TrieNode parent;
+            Map<String, TrieNode> children = new HashMap<>();
+            Boolean entry;
+            String letter;
+            String location;
+            List<GraphDB.Node> nodes = new LinkedList<>();
+
+            TrieNode(String LETTER) {
+                entry = false;
+                letter = LETTER;
+            }
+        }
     }
 
     /**

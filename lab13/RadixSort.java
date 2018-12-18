@@ -17,7 +17,16 @@ public class RadixSort {
      */
     public static String[] sort(String[] asciis) {
         // TODO: Implement LSD Sort
-        return null;
+        int maxlength = 0;
+        String[] returnarray = new String[asciis.length];
+        System.arraycopy(asciis, 0, returnarray, 0, asciis.length);
+        for (int i = 0; i < asciis.length; i++) {
+            maxlength = maxlength > asciis[i].length() ? maxlength : asciis[i].length();
+        }
+        for (int i = 0; i < maxlength; i++) {
+            sortHelperLSD(returnarray, i);
+        }
+        return returnarray;
     }
 
     /**
@@ -28,7 +37,31 @@ public class RadixSort {
      */
     private static void sortHelperLSD(String[] asciis, int index) {
         // Optional LSD helper method for required LSD radix sort
-        return;
+        int[] counts = new int[257];
+        String[] copy = new String[asciis.length];
+        System.arraycopy(asciis, 0, copy, 0, asciis.length);
+        for (String i : asciis) {
+            if (i.length() - 1 < index) {
+                counts[0] = 1;
+            } else {
+                counts[((int) i.charAt(i.length() - 1 - index)) + 1]++;
+            }
+        }
+        int k = 0;
+        for (int i = 0; i < counts.length; i++) {
+            int m = k + counts[i];
+            counts[i] = k;
+            k = m;
+        }
+        for (String i : copy) {
+            if (i.length() - 1 < index) {
+                asciis[counts[0]] = i;
+                counts[0]++;
+            } else {
+                asciis[counts[((int) i.charAt(i.length() - 1 - index)) + 1]] = i;
+                counts[(int) i.charAt(i.length() - 1 - index)]++;
+            }
+        }
     }
 
     /**
@@ -44,5 +77,17 @@ public class RadixSort {
     private static void sortHelperMSD(String[] asciis, int start, int end, int index) {
         // Optional MSD helper method for optional MSD radix sort
         return;
+    }
+
+    public static void main(String[] args) {
+        int k = 0;
+        for (int i = 0; i < 256; i++) {
+            if (k == 8) {
+                System.out.println((char) i + " ");
+                k = 0;
+            }
+            System.out.print((char) i + " ");
+            k++;
+        }
     }
 }
